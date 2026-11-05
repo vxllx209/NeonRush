@@ -9,6 +9,7 @@
 
   const STATES = Object.freeze({
     MENU: 'MENU',
+    STARTER: 'STARTER',
     CHARACTER_SELECT: 'CHARACTER_SELECT',
     SHOP: 'SHOP',
     SETTINGS: 'SETTINGS',
@@ -21,7 +22,9 @@
 
   const S = STATES;
   const TRANSITIONS = Object.freeze({
-    [S.MENU]: [S.CHARACTER_SELECT, S.SHOP, S.SETTINGS, S.MISSIONS],
+    [S.MENU]: [S.STARTER, S.CHARACTER_SELECT, S.SHOP, S.SETTINGS, S.MISSIONS],
+    // STARTER: garaje inicial con todos los autos; el primero que se elige es gratis.
+    [S.STARTER]: [S.CHARACTER_SELECT, S.MENU],
     // CHARACTER_SELECT = GARAGE: la "landing page" de elección de auto antes de correr.
     [S.CHARACTER_SELECT]: [S.MENU, S.SHOP, S.TUTORIAL, S.PLAYING],
     [S.SHOP]: [S.MENU, S.CHARACTER_SELECT],

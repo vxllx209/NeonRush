@@ -172,13 +172,15 @@
       if (this.countdown > 0 || this.crashed || this.over) return;
       switch (action) {
         case 'left':
-        case 'right':
-          if (car.move(action === 'left' ? -1 : 1)) this.events.onSfx('lane');
+        case 'right': {
+          const dir = action === 'left' ? -1 : 1;
+          if (car.move(dir)) this.events.onSfx('lane', { dir });
           else {
-            this.events.onSfx('bump');
+            this.events.onSfx('bump', { dir });
             if (!this.reducedEffects) this.shake = Math.max(this.shake, 0.15);
           }
           break;
+        }
         case 'nitro':
           if (car.nitro()) {
             this.stats.nitros++;
@@ -233,8 +235,9 @@
 
       const car = this.car;
       const d = this.difficulty();
-      const targetMul = car.braking ? G.BRAKE_SPEED : car.nitroActive ? G.NITRO_SPEED : 1;
-      this.speedMul += (targetMul - this.speedMul) * Math.min(1, dt * G.SPEED_RESPONSE);
+      // Las cualidades del auto definen cuánto frena, cuánto empuja el nitro y lo rápido que responde.
+      const targetMul = car.braking ? car.brakeSpeed : car.nitroActive ? car.nitroSpeed : 1;
+      this.speedMul += (targetMul - this.speedMul) * Math.min(1, dt * car.speedResponse);
       this.speed = d.speed * this.speedMul;
       this.time += dt;
       const step = this.speed * dt;
@@ -242,11 +245,13 @@
       this.backdrop.tick(dt * 0.5 * this.speedMul);
 
       const wasOverheated = car.overheated;
+      const hadNitro = car.nitroActive;
       car.update(dt, this.speed, this.distance);
       if (!wasOverheated && car.overheated) {
         this.events.onBanner('FRENO SOBRECALENTADO', 'pink');
-        this.events.onSfx('deny');
+        this.events.onSfx('overheat');
       }
+      if (hadNitro && !car.nitroActive) this.events.onSfx('nitro-end');
       this.cam.panX += (car.x * 0.35 - this.cam.panX) * Math.min(1, dt * 6);
 
       this.spawner.update(this.distance, d);
@@ -286,6 +291,11 @@
           row.counted = true;
           this.stats.dodged++;
           this.score += G.DODGE_SCORE * this.scoreMult;
+          if (row.traffic) {
+            // Adelantamiento: whoosh desde el lado del auto adelantado.
+            const t = row.traffic;
+            this.events.onSfx('pass', { dir: Math.sign(t.x - car.x) || 1 });
+          }
         }
       }
 
@@ -297,7 +307,7 @@
 
     _updateScore(step) {
       const nitroBonus = this.car.nitroActive ? G.NITRO_SCORE_MULT : 1;
-      this.score += step * G.SCORE_PER_UNIT * this.scoreMult * nitroBonus;
+      this.score += step * G.SCORE_PER_UNIT * this.scoreMult * nitroBonus * this.car.scoreBonus;
 
       const level = Math.min(G.MAX_LEVEL, Math.floor(this.distance / G.LEVEL_DISTANCE));
       if (level > this.level) {

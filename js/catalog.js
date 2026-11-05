@@ -1,7 +1,8 @@
 /**
  * NEON RUSH — Catálogo de autos y cosméticos.
- * Todo es estético: ningún elemento cambia la velocidad, el tamaño de la
- * hitbox ni la puntuación (sin ventajas injustas).
+ * Los autos tienen cualidades (aceleración, velocidad máxima, freno y manejo)
+ * que afectan a la conducción; los más caros son mejores. Pinturas, estelas y
+ * efectos son puramente estéticos. La hitbox es la misma para todos.
  */
 (function (NR) {
   'use strict';
@@ -11,9 +12,45 @@
   /** El garaje recorre los autos del más barato al más caro. */
   const byPrice = (list) => list.slice().sort((a, b) => a.price - b.price);
 
-  const CARS = freeze(byPrice([
+  /**
+   * Cualidades de cada auto (0..1). El precio fija el nivel general
+   * (más caro = mejor media) y cada carrocería reparte puntos según su
+   * carácter. Los sesgos de cada modelo suman 0, así la media depende solo
+   * del precio y siempre crece con él.
+   */
+  const STATS = Object.freeze([
+    { key: 'accel', label: 'ACELERACIÓN' },
+    { key: 'top', label: 'VEL. MÁXIMA' },
+    { key: 'brake', label: 'FRENO' },
+    { key: 'handling', label: 'MANEJO' },
+  ]);
+  const MAX_PRICE = 3000;
+  const BIAS = {
+    formula: { accel: -0.04, top: -0.08, brake: 0.05, handling: 0.07 },
+    gt: { accel: 0.03, top: 0.02, brake: -0.02, handling: -0.03 },
+    hyper: { accel: 0.02, top: 0.1, brake: -0.04, handling: -0.08 },
+    proto: { accel: -0.06, top: 0.03, brake: 0.05, handling: -0.02 },
+    muscle: { accel: 0.12, top: 0.04, brake: -0.08, handling: -0.08 },
+  };
+
+  function computeStats(car) {
+    const base = 0.28 + 0.6 * Math.min(1, car.price / MAX_PRICE);
+    const bias = BIAS[car.model] || {};
+    const out = {};
+    for (const { key } of STATS) {
+      out[key] = Math.round(NR.util.clamp(base + (bias[key] || 0), 0.12, 1) * 100) / 100;
+    }
+    return Object.freeze(out);
+  }
+
+  /** Valoración global 0..10. */
+  const rating = (stats) => (STATS.reduce((a, s) => a + stats[s.key], 0) / STATS.length) * 10;
+
+  const withStats = (list) => list.map((car) => Object.assign({}, car, { stats: computeStats(car) }));
+
+  const CARS = freeze(byPrice(withStats([
     {
-      id: 'neo', name: 'NEO-1', model: 'formula', cls: 'FÓRMULA', price: 0,
+      id: 'neo', name: 'NEO-1', model: 'formula', cls: 'FÓRMULA', price: 300,
       desc: 'Monoplaza de serie en azul y blanco. Ligero, preciso, nacido en la pista.',
       colors: { body: '#E6EEFF', body2: '#9FB3D9', accent: '#00D9FF', dark: '#141c36', light: '#FF36C8' },
     },
@@ -127,7 +164,7 @@
       desc: 'Negro profundo con franjas doradas. La leyenda final del garaje.',
       colors: { body: '#121218', body2: '#07070a', accent: '#d9a830', dark: '#030304', light: '#FFB020', stripe: '#d9a830' },
     },
-  ]));
+  ])));
 
   /** Pinturas: sustituyen los colores de carrocería del auto elegido. */
   const PAINTS = freeze([
@@ -170,5 +207,5 @@
     return Object.assign({}, car.colors, paint && paint.colors ? paint.colors : null);
   }
 
-  NR.CATALOG = Object.freeze({ CARS, PAINTS, TRAILS, EFFECTS, CATEGORIES, DEFAULTS, find, resolveColors });
+  NR.CATALOG = Object.freeze({ CARS, PAINTS, TRAILS, EFFECTS, CATEGORIES, DEFAULTS, STATS, rating, find, resolveColors });
 })(window.NR);

@@ -98,7 +98,7 @@
       this._set('mult', game.scoreMult, (m) => `x${m}`);
 
       // Medidores: solo se tocan cuando cambian más de un 1%.
-      const nitro = car.nitroActive ? car.nitroT / NR.CONFIG.GAME.NITRO_DURATION : car.nitroMeter;
+      const nitro = car.nitroActive ? car.nitroT / car.nitroDuration : car.nitroMeter;
       this._bar('nitro', nitro);
       this._flag('nitroReady', car.nitroReady, () => this.hud.nitroGauge.classList.toggle('is-ready', car.nitroReady));
       this._flag('nitroOn', car.nitroActive, () => this.hud.nitroGauge.classList.toggle('is-active', car.nitroActive));

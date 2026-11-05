@@ -74,6 +74,10 @@
       this.q('name').textContent = car.name;
       this.q('desc').textContent = car.desc;
       this.q('coins').textContent = formatNumber(save.coins);
+      const equipped = CAT.find('cars', save.equipped.car);
+      StatsView.render(this.q('stats'), car.stats, {
+        compare: equipped && equipped.id !== car.id ? equipped.stats : null,
+      });
 
       const dots = this.q('dots');
       dots.replaceChildren(...CAT.CARS.map((c, i) => {
@@ -246,10 +250,58 @@
     }
   }
 
+  /**
+   * Barras de cualidades de un auto (garaje, garaje inicial y tienda).
+   * `compare`: cualidades de otro auto (el equipado) que se marcan como
+   * referencia; la diferencia se colorea en verde (mejor) o rosa (peor).
+   */
+  const StatsView = {
+    render(el, stats, { compare = null, compact = false } = {}) {
+      if (!el || !stats) return;
+      el.classList.toggle('car-stats--compact', compact);
+      const rows = CAT.STATS.map(({ key, label }) => {
+        const v = stats[key];
+        const row = document.createElement('div');
+        row.className = 'stat';
+        const name = document.createElement('span');
+        name.className = 'stat__label';
+        name.textContent = label;
+        const bar = document.createElement('i');
+        bar.className = 'stat__bar';
+        bar.style.setProperty('--v', `${Math.round(v * 100)}%`);
+        if (compare) {
+          const c = compare[key];
+          bar.style.setProperty('--m', `${Math.round(c * 100)}%`);
+          bar.dataset.delta = v > c + 0.004 ? 'up' : v < c - 0.004 ? 'down' : 'same';
+        }
+        const value = document.createElement('b');
+        value.className = 'stat__value';
+        value.textContent = (v * 10).toFixed(1);
+        row.append(name, bar, value);
+        return row;
+      });
+      const head = document.createElement('div');
+      head.className = 'stat-rating';
+      const r = CAT.rating(stats);
+      head.innerHTML = `<span>RATING</span><b>${r.toFixed(1)}</b>`;
+      if (compare) {
+        const d = r - CAT.rating(compare);
+        if (Math.abs(d) >= 0.05) {
+          const em = document.createElement('em');
+          em.className = d > 0 ? 'is-up' : 'is-down';
+          em.textContent = `${d > 0 ? '+' : ''}${d.toFixed(1)} vs tu auto`;
+          head.append(em);
+        }
+      }
+      el.replaceChildren(head, ...rows);
+    },
+  };
+
   /** Silueta para autos bloqueados. */
   function lockedColors() {
     return { body: '#1b2240', body2: '#121832', accent: '#2a3358', dark: '#0a0e1d', light: '#3a4366' };
   }
 
   NR.Garage = Garage;
+  NR.StatsView = StatsView;
 })(window.NR);

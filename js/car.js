@@ -1,7 +1,8 @@
 /**
  * NEON RUSH — Auto del jugador + renderizador de autos (vista trasera).
  *
- * La hitbox es IDÉNTICA para todos los modelos: los autos son cosméticos.
+ * La hitbox es IDÉNTICA para todos los modelos; lo que cambia entre autos son
+ * sus cualidades (aceleración, velocidad máxima, freno, manejo): ver applyStats().
  * Física independiente de los FPS (todo escalado por dt).
  *
  * CarRenderer.draw(ctx, x, y, u, model, colors, state) dibuja cualquier auto
@@ -28,6 +29,7 @@
 
     reset({ car = 'neo', paint = 'factory', trail = 'stream', effect = 'none' }) {
       const def = NR.CATALOG.find('cars', car) || NR.CATALOG.CARS[0];
+      this.applyStats(def.stats);
       this.model = def.model;
       this.colors = NR.CATALOG.resolveColors(def.id, paint);
       this.trail = NR.CATALOG.find('trails', trail) || NR.CATALOG.TRAILS[0];
@@ -49,6 +51,26 @@
       this.history = []; // posiciones pasadas para la estela
     }
 
+    /**
+     * Traduce las cualidades del auto (0..1) a parámetros de conducción.
+     * Son diferencias que se notan, pero ningún auto hace imposible el juego:
+     * incluso el peor manejo cruza dos carriles en ~0,3 s (el tiempo mínimo
+     * entre filas de obstáculos es 0,62 s).
+     */
+    applyStats(stats) {
+      const { lerp } = NR.util;
+      const s = stats || { accel: 0.3, top: 0.3, brake: 0.3, handling: 0.3 };
+      this.stats = s;
+      this.speedResponse = lerp(1.2, 5.5, s.accel);    // recuperación tras frenar / entrada del nitro
+      this.nitroDuration = lerp(1.8, 4.4, s.accel);    // segundos de nitro
+      this.nitroSpeed = lerp(1.2, 1.65, s.top);        // multiplicador de velocidad con nitro
+      this.scoreBonus = lerp(1, 1.35, s.top);          // puntos por distancia
+      this.brakeSpeed = lerp(0.85, 0.4, s.brake);      // velocidad al frenar (menor = frena más)
+      this.heatRate = 1 / lerp(0.8, 2.8, s.brake);     // segundos de freno hasta sobrecalentar
+      this.coolRate = 1 / lerp(3.2, 1.6, s.brake);     // segundos para enfriar del todo
+      this.laneRate = lerp(5, 24, s.handling);         // rapidez del cambio de carril
+    }
+
     get braking() {
       return !this.dead && !this.overheated && (this.brakeHeld || this.brakePulse > 0);
     }
@@ -66,7 +88,7 @@
 
     nitro() {
       if (this.dead || !this.nitroReady) return false;
-      this.nitroT = G.NITRO_DURATION;
+      this.nitroT = this.nitroDuration;
       this.nitroMeter = 0;
       return true;
     }
@@ -86,7 +108,7 @@
     update(dt, speed, distance) {
       const target = laneX(this.lane);
       const prevX = this.x;
-      this.x += (target - this.x) * Math.min(1, dt * G.LANE_CHANGE_RATE);
+      this.x += (target - this.x) * Math.min(1, dt * this.laneRate);
       if (Math.abs(target - this.x) < 0.002) this.x = target;
       const vx = dt > 0 ? (this.x - prevX) / dt : 0;
       this.tilt += (clamp(vx * 0.04, -0.22, 0.22) - this.tilt) * Math.min(1, dt * 12);
@@ -98,10 +120,10 @@
       // Freno limitado por temperatura: no se puede frenar indefinidamente.
       if (this.braking) {
         this.nitroT = 0; // frenar cancela el nitro
-        this.heat = Math.min(1, this.heat + dt * G.BRAKE_HEAT_RATE);
+        this.heat = Math.min(1, this.heat + dt * this.heatRate);
         if (this.heat >= 1) this.overheated = true;
       } else {
-        this.heat = Math.max(0, this.heat - dt * G.BRAKE_COOL_RATE);
+        this.heat = Math.max(0, this.heat - dt * this.coolRate);
         if (this.overheated && this.heat <= G.BRAKE_RECOVER) this.overheated = false;
       }
 

@@ -113,7 +113,14 @@
           btn.classList.add('btn--buy');
           if (save.coins < item.price) btn.classList.add('is-short');
         }
-        card.append(canvas, name, sub, btn);
+        card.append(canvas, name, sub);
+        if (this.tab === 'cars') {
+          const stats = document.createElement('div');
+          stats.className = 'car-stats';
+          NR.StatsView.render(stats, item.stats, { compact: true });
+          card.append(stats);
+        }
+        card.append(btn);
         return card;
       });
       this.grid.replaceChildren(...cards);
@@ -139,7 +146,7 @@
     }
     ctx.stroke();
 
-    const carId = tab === 'cars' ? item.id : save.equipped.car;
+    const carId = tab === 'cars' ? item.id : save.equipped.car || CAT.DEFAULTS.cars;
     const car = CAT.find('cars', carId);
     const paint = tab === 'paints' ? item.id : tab === 'cars' ? 'factory' : save.equipped.paint;
     const effect = tab === 'effects' ? item.id : 'none';
@@ -170,4 +177,5 @@
 
   NR.Shop = Shop;
   NR.Economy = Object.freeze({ purchase, equip });
+  NR.drawThumb = drawThumb;
 })(window.NR);

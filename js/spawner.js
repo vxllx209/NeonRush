@@ -89,8 +89,8 @@
       this._registerRow(pos + 1);
     }
 
-    _registerRow(end) {
-      this.game.rows.push({ pos: end, counted: false });
+    _registerRow(end, traffic = null) {
+      this.game.rows.push({ pos: end, counted: false, traffic });
       this.lastRowEnd = Math.max(this.lastRowEnd, end);
     }
 
@@ -241,8 +241,9 @@
       const used = new Set();
       for (const c of cars) {
         const meet = meet0 + (c.offset || 0);
-        game.obstacles.push(new NR.Traffic(c.lane, meet, game.distance, c.switchTo));
-        this._registerRow(meet + 1.5);
+        const car = new NR.Traffic(c.lane, meet, game.distance, c.switchTo);
+        game.obstacles.push(car);
+        this._registerRow(meet + 1.5, car);
         lastMeet = Math.max(lastMeet, meet);
         used.add(c.lane);
         if (c.switchTo != null) used.add(c.switchTo);

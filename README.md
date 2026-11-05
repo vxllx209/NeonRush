@@ -23,7 +23,11 @@ fuentes del sistema como respaldo.
 
 ## Flujo del juego
 
-`MENU → PLAY NOW → GARAGE (elige auto, pintura, estela y efecto) → RACE → (tutorial la primera vez) → carrera → GAME OVER → TRY AGAIN / GARAGE / MENU`
+`MENU → PLAY NOW → (primera vez: ELIGE TU PRIMER AUTO) → GARAGE (pintura, estela, efecto) → RACE → (tutorial la primera vez) → carrera → GAME OVER → TRY AGAIN / GARAGE / MENU`
+
+**Primer auto gratis:** antes de la primera carrera se muestran los 21 autos.
+El que elijas es gratis, sea cual sea, y se entrega una sola vez. Después solo
+puedes cambiar de auto desbloqueando otros con la energía que ganes.
 
 ## Controles
 
@@ -40,16 +44,32 @@ calculando el momento (frenando).
 
 ## Contenido
 
-**Autos:** 21 skins en 5 carrocerías. Son cosméticos, todos con la misma hitbox
-(sin ventajas). El garaje los recorre del más barato al más caro.
+**Autos:** 21 autos en 5 carrocerías, del más barato (NEO-1, 300) al más caro
+(OUTLAW, 3.000). El garaje los recorre en ese orden.
 
-| Carrocería | Autos |
-|---|---|
-| Fórmula | NEO-1 (gratis), REDLINE F, BLAZE R, AURORA, COBALT 9, PHANTOM |
-| Deportivo | NOVA GT, VOLT GT, EMBER GT, GLACIER, VIPER RS |
-| Hiperdeportivo | SHADOW X, ECLIPSE, SPECTER, NEBULA |
-| Prototipo | APEX LMP, ZENITH, INFERNO |
-| Muscle | THUNDER, REBEL 69, OUTLAW (3.000) |
+| Carrocería | Carácter | Autos |
+|---|---|---|
+| Fórmula | Freno y manejo | NEO-1, REDLINE F, BLAZE R, AURORA, COBALT 9, PHANTOM |
+| Deportivo | Equilibrado | NOVA GT, VOLT GT, EMBER GT, GLACIER, VIPER RS |
+| Hiperdeportivo | Velocidad máxima | SHADOW X, ECLIPSE, SPECTER, NEBULA |
+| Prototipo | Freno y velocidad | APEX LMP, ZENITH, INFERNO |
+| Muscle | Aceleración (manejo pesado) | THUNDER, REBEL 69, OUTLAW |
+
+**Cualidades:** cada auto tiene 4 barras (de 0 a 10) y una valoración global
+(RATING de 3,4 a 8,8). El precio fija el nivel medio, así que los autos más caros
+siempre tienen mejor valoración; la carrocería reparte los puntos. Las
+cualidades cambian la conducción:
+
+| Cualidad | Efecto en la carrera | Peor → mejor auto |
+|---|---|---|
+| ACELERACIÓN | Recuperación tras frenar y duración del nitro | nitro 2,6 s → 4,4 s |
+| VEL. MÁXIMA | Velocidad con nitro y puntos por distancia | nitro +31 % → +61 %; puntos ×1,09 → ×1,32 |
+| FRENO | Fuerza de frenado y resistencia al sobrecalentamiento | frena al 72 % → al 50 %; 1,6 s → 2,4 s |
+| MANEJO | Rapidez del cambio de carril | 0,22 s → 0,13 s |
+
+La hitbox es la misma para todos y el juego es justo con cualquier auto: un bot
+de prueba sobrevive 3 minutos tanto con el más barato como con el más caro. En
+el garaje, las barras de otro auto se comparan con las del auto equipado.
 
 **Tienda:** autos, 6 pinturas, 5 estelas y 4 efectos (neón inferior, chispas,
 aura). Comprueba el saldo antes de comprar, impide compras duplicadas y nunca
@@ -86,10 +106,17 @@ deja el saldo en negativo.
 **Misiones:** 12 contratos (orbes, supervivencia, puntos, escudo, esquivas, nitro,
 etc.). La recompensa se cobra en MISSIONS y solo una vez.
 
-**Audio:**
-- Música electrónica procedural (menú y carrera).
-- Motor que responde a la velocidad.
-- Efectos de sonido.
+**Audio** (todo sintetizado con WebAudio):
+- Música synthwave de 8 compases con pad, bajo, arpegio, melodía con eco,
+  reverb y batería en carrera. En pausa se amortigua.
+- Motor con 6 marchas: las RPM suben con la velocidad y caen en cada cambio.
+  Acelerones en la cuenta atrás y salida quemando rueda.
+- Nitro con turbo, explosiones del escape y válvula de alivio al terminar.
+- Chirrido de llantas al cambiar de carril (con paneo hacia el lado del giro).
+- Chirrido continuo de frenos mientras se mantiene el freno, y vapor al
+  sobrecalentarse.
+- Viento según la velocidad y whoosh estéreo al adelantar tráfico.
+- Choque con frenazo, golpe grave, chapa metálica y cristales.
 - Volumen y silencio por separado para música y efectos.
 - No suena nada hasta la primera interacción.
 

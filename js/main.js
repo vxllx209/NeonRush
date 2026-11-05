@@ -42,7 +42,7 @@
         onHud: (g) => ui.updateHud(g),
         onBanner: (text, tone) => ui.banner(text, tone),
         onCountdown: (label) => ui.countdown(label),
-        onSfx: (name) => Audio.play(name),
+        onSfx: (name, opts) => Audio.play(name, opts),
         onCrash: () => Audio.engine(false),
         onGameOver: (results) => {
           commitRun();
@@ -83,6 +83,9 @@
 
     /* ---------------- Pantallas con lógica propia ---------------- */
     const garage = new NR.Garage(screen(S.CHARACTER_SELECT));
+    const starter = new NR.Starter(screen(S.STARTER));
+    /** Primera vez: garaje inicial con todos los autos (primero gratis). */
+    const goGarage = () => fsm.go(save().starterChosen ? S.CHARACTER_SELECT : S.STARTER);
     const shop = new NR.Shop(screen(S.SHOP));
     const missionsList = screen(S.MISSIONS).querySelector('[data-missions="list"]');
     const missionsSummary = screen(S.MISSIONS).querySelector('[data-missions="summary"]');
@@ -134,8 +137,28 @@
 
     let resetConfirmTimer = 0;
     const ACTIONS = {
-      play: () => fsm.go(S.CHARACTER_SELECT),
-      garage: () => fsm.go(S.CHARACTER_SELECT),
+      play: goGarage,
+      garage: goGarage,
+      'starter-pick': (el) => starter.pick(el.dataset.id),
+      'starter-filter': (el) => starter.setFilter(el.dataset.cls),
+      'starter-confirm': () => {
+        const id = starter.selected;
+        const car = id && NR.CATALOG.find('cars', id);
+        if (!car) return;
+        let granted = false;
+        const s = NR.Storage.update((d) => {
+          if (d.starterChosen) return; // el regalo solo se entrega una vez
+          if (!d.unlocked.cars.includes(id)) d.unlocked.cars.push(id);
+          d.equipped.car = id;
+          d.starterChosen = true;
+          granted = true;
+        });
+        if (!granted) return;
+        Audio.play('purchase');
+        ui.toast(`${car.name} es tuyo. ¡A la pista!`, { tag: 'NEW CAR', tone: 'green' });
+        refreshMenu(s);
+        fsm.go(S.CHARACTER_SELECT);
+      },
       shop: () => fsm.go(S.SHOP, { tab: 'cars' }),
       'open-shop': (el) => fsm.go(S.SHOP, { tab: el.dataset.tab || 'cars' }),
       missions: () => fsm.go(S.MISSIONS),
@@ -231,6 +254,7 @@
     fsm.define(S.MISSIONS, { enter: renderMissions });
     fsm.define(S.SHOP, { enter: (from, payload) => shop.open(save(), payload && payload.tab) });
     fsm.define(S.CHARACTER_SELECT, { enter: () => garage.open(save()) });
+    fsm.define(S.STARTER, { enter: () => starter.open() });
     fsm.define(S.PLAYING, {
       enter: (from, payload) => {
         if (payload && payload.resume) {
@@ -245,6 +269,8 @@
             bestScore: runSave.bestScore,
             reducedEffects: effectsReduced(),
           });
+          const car = NR.CATALOG.find('cars', runSave.equipped.car);
+          if (car) ui.banner(`${car.name} · RATING ${NR.CATALOG.rating(car.stats).toFixed(1)}`, 'cyan');
         }
         input.setEnabled(true);
       },
@@ -267,7 +293,9 @@
 
     fsm.onChange((to) => {
       ui.showScreen(to);
-      Audio.setMusic(to === S.PLAYING ? 'race' : 'menu');
+      // En pausa sigue la música de carrera, pero amortiguada.
+      Audio.setMusic(to === S.PLAYING || to === S.PAUSED ? 'race' : 'menu');
+      Audio.muffle(to === S.PAUSED);
       if (to !== S.PLAYING) Audio.engine(false);
     });
     ui.showScreen(fsm.current);
@@ -294,7 +322,7 @@
         if (s === S.PLAYING) pause();
         else if (s === S.PAUSED) resume();
         else if (s === S.SHOP) ACTIONS.back();
-        else if ([S.SETTINGS, S.TUTORIAL, S.MISSIONS, S.CHARACTER_SELECT].includes(s)) fsm.go(S.MENU);
+        else if ([S.SETTINGS, S.TUTORIAL, S.MISSIONS, S.CHARACTER_SELECT, S.STARTER].includes(s)) fsm.go(S.MENU);
         return;
       }
       if (s === S.TUTORIAL) {
@@ -304,7 +332,7 @@
         if (e.code === 'ArrowRight' || e.code === 'KeyD') garage.step(1);
         else if (e.code === 'ArrowLeft' || e.code === 'KeyA') garage.step(-1);
       } else if (s === S.MENU && e.code === 'Enter' && document.activeElement === document.body) {
-        fsm.go(S.CHARACTER_SELECT);
+        goGarage();
       }
     });
 
@@ -323,7 +351,8 @@
           if (fsm.is(S.PLAYING)) {
             game.render();
             const running = !game.crashed && game.countdown <= 0;
-            Audio.engine(running, (game.speed - G.SPEED_MIN * 0.6) / (G.SPEED_MAX * 1.4), game.car.nitroActive, game.car.braking);
+            // Motor encendido también durante la cuenta atrás (acelerones de salida).
+            Audio.engine(!game.crashed, game.speed / (G.SPEED_MAX * G.NITRO_SPEED), game.car.nitroActive, game.car.braking, dt);
             missionTimer += dt;
             if (running && game.time > 1 && missionTimer > 0.3) {
               missionTimer = 0;
@@ -347,6 +376,12 @@
           backdrop.render();
           garage.update(dt);
           garage.render();
+          break;
+        case S.STARTER:
+          backdrop.update(dt);
+          backdrop.render();
+          starter.update(dt);
+          starter.render();
           break;
         default:
           backdrop.update(dt);
@@ -380,6 +415,7 @@
       backdrop.resize();
       game.resize();
       garage.resize();
+      starter.resize();
       frozenDirty = true;
     }, 120));
     reducedMotionQuery.addEventListener?.('change', () => backdrop.setReducedMotion(effectsReduced()));
@@ -388,7 +424,7 @@
     start();
 
     // Acceso para depuración desde la consola: NR.app
-    NR.app = { fsm, ui, backdrop, game, input, garage, shop, storage: NR.Storage, audio: Audio };
+    NR.app = { fsm, ui, backdrop, game, input, garage, starter, shop, storage: NR.Storage, audio: Audio };
   }
 
   if (document.readyState === 'loading') {

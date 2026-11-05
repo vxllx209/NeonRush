@@ -25,14 +25,15 @@
       bestScore: 0,
       bestDistance: 0,
       coins: 0,
+      starterChosen: false, // el primer auto (gratis) se elige en la pantalla STARTER
       unlocked: {
-        cars: [CAT.DEFAULTS.cars],
+        cars: [],
         paints: [CAT.DEFAULTS.paints],
         trails: [CAT.DEFAULTS.trails],
         effects: [CAT.DEFAULTS.effects],
       },
       equipped: {
-        car: CAT.DEFAULTS.cars,
+        car: null, // ningún auto hasta elegir el primero
         paint: CAT.DEFAULTS.paints,
         trail: CAT.DEFAULTS.trails,
         effect: CAT.DEFAULTS.effects,
@@ -70,13 +71,15 @@
     d.bestScore = toInt(raw.bestScore, d.bestScore);
     d.bestDistance = toInt(raw.bestDistance, d.bestDistance);
     d.coins = toInt(raw.coins, d.coins);
+    d.starterChosen = raw.starterChosen === true;
 
-    // Inventario: solo ids existentes, sin duplicados, siempre con los gratuitos.
+    // Inventario: solo ids existentes, sin duplicados. Pinturas, estelas y
+    // efectos incluyen siempre el gratuito; los autos NO (el primero se elige).
     if (isObject(raw.unlocked)) {
       for (const cat of Object.keys(d.unlocked)) {
         const list = Array.isArray(raw.unlocked[cat]) ? raw.unlocked[cat] : [];
         const valid = list.filter((id) => typeof id === 'string' && CAT.find(cat, id));
-        d.unlocked[cat] = [...new Set([CAT.DEFAULTS[cat], ...valid])];
+        d.unlocked[cat] = [...new Set(cat === 'cars' ? valid : [CAT.DEFAULTS[cat], ...valid])];
       }
     }
 
@@ -87,6 +90,8 @@
         if (typeof id === 'string' && d.unlocked[cat].includes(id)) d.equipped[key] = id;
       }
     }
+    // Si hay autos pero el equipado no es válido, se equipa el primero que se posea.
+    if (!d.equipped.car && d.unlocked.cars.length) d.equipped.car = d.unlocked.cars[0];
 
     // Misiones: { id: { progress, done, claimed } }
     if (isObject(raw.missions)) {
@@ -127,6 +132,12 @@
       raw.equipped = { car: raw.selectedCharacter };
       delete raw.selectedCharacter;
       raw.version = 2;
+    }
+    if (raw.version < 3) {
+      // v3: el primer auto se elige gratis en la pantalla STARTER. Las partidas
+      // existentes conservan sus autos y también reciben esa elección gratuita.
+      raw.starterChosen = false;
+      raw.version = 3;
     }
     return raw;
   }

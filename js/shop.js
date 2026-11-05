@@ -29,7 +29,37 @@
       d.coins -= item.price;
       d.unlocked[cat].push(id);
       d.equipped[NR.EQUIP_KEYS[cat]] = id; // lo comprado se equipa
+      if (cat === 'tracks') d.stats.tracksUnlocked += 1;
       result = { ok: true, item };
+    });
+    result.save = save;
+    return result;
+  }
+
+  /**
+   * Taller: sube un nivel una cualidad de un auto propio.
+   * Comprueba propiedad, nivel máximo, tope de la cualidad y saldo dentro de
+   * la misma actualización atómica del guardado.
+   */
+  function upgrade(carId, statKey) {
+    const car = CAT.find('cars', carId);
+    if (!car || !CAT.STATS.some((s) => s.key === statKey)) return { ok: false, reason: 'unknown' };
+    let result = { ok: false, reason: 'unknown' };
+    const save = NR.Storage.update((d) => {
+      if (!d.unlocked.cars.includes(carId)) { result = { ok: false, reason: 'locked' }; return; }
+      const levels = CAT.upgradeLevels(carId, d.upgrades);
+      const level = levels[statKey];
+      if (level >= CAT.MAX_UPGRADE || CAT.effectiveStats(carId, d.upgrades)[statKey] >= 1) {
+        result = { ok: false, reason: 'max' };
+        return;
+      }
+      const cost = CAT.upgradeCost(car, level);
+      if (d.coins < cost) { result = { ok: false, reason: 'funds', missing: cost - d.coins }; return; }
+      d.coins -= cost;
+      levels[statKey] = level + 1;
+      d.upgrades[carId] = levels;
+      d.stats.upgradesBought += 1;
+      result = { ok: true, level: level + 1, cost };
     });
     result.save = save;
     return result;
@@ -117,7 +147,7 @@
         if (this.tab === 'cars') {
           const stats = document.createElement('div');
           stats.className = 'car-stats';
-          NR.StatsView.render(stats, item.stats, { compact: true });
+          NR.StatsView.render(stats, owned ? CAT.effectiveStats(item.id, save.upgrades) : item.stats, { compact: true, base: item.stats });
           card.append(stats);
         }
         card.append(btn);
@@ -176,6 +206,6 @@
   }
 
   NR.Shop = Shop;
-  NR.Economy = Object.freeze({ purchase, equip });
+  NR.Economy = Object.freeze({ purchase, equip, upgrade });
   NR.drawThumb = drawThumb;
 })(window.NR);

@@ -56,7 +56,11 @@
 
     _choose(tier) {
       const pool = [];
-      for (let t = 0; t <= tier; t++) pool.push(...PATTERNS[t]);
+      // Cada pista puede favorecer ciertos patrones (p. ej. más tráfico en ORBITAL RING).
+      const boost = (this.game.mods && this.game.mods.patterns) || {};
+      for (let t = 0; t <= tier; t++) {
+        for (const [name, w] of PATTERNS[t]) pool.push([name, w * (boost[name] || 1)]);
+      }
       let name = this._weighted(pool);
       if (name === this.last) name = this._weighted(pool);
       return name;
@@ -100,7 +104,10 @@
 
     _orbTrail(lane, from, to) {
       const start = Math.max(from, this.lastRowEnd + 1.5);
-      for (let p = start; p <= to; p += 2.2) this._orb(lane, p);
+      // Pistas con más energía: estelas de orbes más densas.
+      const extra = (this.game.mods && this.game.mods.orbs) || 0;
+      const step = 2.2 / (1 + extra * 0.7);
+      for (let p = start; p <= to; p += step) this._orb(lane, p);
     }
 
     /** Power-up ocasional en un carril libre, antes de la fila. */

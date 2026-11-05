@@ -6,11 +6,11 @@
 window.NR = window.NR || {};
 
 NR.CONFIG = Object.freeze({
-  VERSION: '1.3.2',
+  VERSION: '1.4.2',
   BUILD_PHASE: 9,
 
   STORAGE_KEY: 'neonrush.save',
-  SAVE_VERSION: 3,
+  SAVE_VERSION: 4,
 
   /** Límite de devicePixelRatio para proteger el rendimiento en móviles. */
   MAX_DPR: 2,

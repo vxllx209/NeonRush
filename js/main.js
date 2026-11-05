@@ -84,6 +84,7 @@
     /* ---------------- Pantallas con lógica propia ---------------- */
     const garage = new NR.Garage(screen(S.CHARACTER_SELECT));
     const starter = new NR.Starter(screen(S.STARTER));
+    const trackSelect = new NR.TrackSelect(screen(S.TRACK_SELECT), backdrop);
     /** Primera vez: garaje inicial con todos los autos (primero gratis). */
     const goGarage = () => fsm.go(save().starterChosen ? S.CHARACTER_SELECT : S.STARTER);
     const shop = new NR.Shop(screen(S.SHOP));
@@ -163,13 +164,36 @@
       'open-shop': (el) => fsm.go(S.SHOP, { tab: el.dataset.tab || 'cars' }),
       missions: () => fsm.go(S.MISSIONS),
       settings: () => fsm.go(S.SETTINGS),
-      back: () => fsm.go(fsm.is(S.SHOP) && fsm.previous === S.CHARACTER_SELECT ? S.CHARACTER_SELECT : S.MENU),
+      back: () => {
+        if (fsm.is(S.TRACK_SELECT)) fsm.go(S.CHARACTER_SELECT);
+        else fsm.go(fsm.is(S.SHOP) && fsm.previous === S.CHARACTER_SELECT ? S.CHARACTER_SELECT : S.MENU);
+      },
 
       'car-prev': () => garage.step(-1),
       'car-next': () => garage.step(1),
       'garage-primary': (el) => {
-        if (el.dataset.mode === 'race') startRace();
+        if (el.dataset.mode === 'race') fsm.go(S.TRACK_SELECT);
         else if (el.dataset.mode === 'unlock' && buy('cars', garage.car.id).ok) garage.setSave(save());
+      },
+      'track-prev': () => trackSelect.step(-1),
+      'track-next': () => trackSelect.step(1),
+      'track-primary': (el) => {
+        if (el.dataset.mode === 'start') startRace();
+        else if (el.dataset.mode === 'unlock' && buy('tracks', trackSelect.track.id).ok) trackSelect.setSave(save());
+      },
+      upgrade: (el) => {
+        const car = garage.car;
+        const statDef = NR.CATALOG.STATS.find((st) => st.key === el.dataset.stat);
+        const res = NR.Economy.upgrade(car.id, el.dataset.stat);
+        if (res.ok) {
+          Audio.play('levelup');
+          ui.toast(`${car.name}: ${statDef.label} nivel ${res.level}/${NR.CATALOG.MAX_UPGRADE}.`, { tag: 'UPGRADE', tone: 'green', duration: 1800 });
+          garage.setSave(res.save);
+          refreshMenu(res.save);
+        } else if (res.reason === 'funds') {
+          Audio.play('deny');
+          ui.toast(`Te faltan ${formatNumber(res.missing)} de energía para esta mejora.`, { tag: 'ENERGY', tone: 'pink' });
+        }
       },
       equip: (el) => {
         NR.Economy.equip(el.dataset.cat, el.dataset.id);
@@ -226,7 +250,8 @@
       },
     };
 
-    const SILENT = new Set(['pause', 'resume', 'buy', 'claim', 'garage-primary', 'car-prev', 'car-next']);
+    const SILENT = new Set(['pause', 'resume', 'buy', 'claim', 'garage-primary', 'car-prev', 'car-next',
+      'track-prev', 'track-next', 'track-primary', 'upgrade']);
     const ui = new NR.Interface(root, {
       onAction(action, el) {
         if (performance.now() < actionLockUntil) return;
@@ -255,6 +280,7 @@
     fsm.define(S.SHOP, { enter: (from, payload) => shop.open(save(), payload && payload.tab) });
     fsm.define(S.CHARACTER_SELECT, { enter: () => garage.open(save()) });
     fsm.define(S.STARTER, { enter: () => starter.open() });
+    fsm.define(S.TRACK_SELECT, { enter: () => trackSelect.open(save()) });
     fsm.define(S.PLAYING, {
       enter: (from, payload) => {
         if (payload && payload.resume) {
@@ -266,11 +292,15 @@
           ui.resetHud();
           game.newRun({
             equipped: runSave.equipped,
+            upgrades: runSave.upgrades,
             bestScore: runSave.bestScore,
             reducedEffects: effectsReduced(),
           });
           const car = NR.CATALOG.find('cars', runSave.equipped.car);
-          if (car) ui.banner(`${car.name} · RATING ${NR.CATALOG.rating(car.stats).toFixed(1)}`, 'cyan');
+          if (car) {
+            const rating = NR.CATALOG.rating(NR.CATALOG.effectiveStats(car.id, runSave.upgrades));
+            ui.banner(`${game.track.name} · ${car.name} ${rating.toFixed(1)}`, 'cyan');
+          }
         }
         input.setEnabled(true);
       },
@@ -291,7 +321,11 @@
       },
     });
 
+    // Escenario de fondo: la pista elegida durante la carrera y en TRACK_SELECT;
+    // la ciudad en el resto de pantallas.
+    const TRACK_SCENES = new Set([S.PLAYING, S.PAUSED, S.GAME_OVER, S.TRACK_SELECT]);
     fsm.onChange((to) => {
+      if (!TRACK_SCENES.has(to)) backdrop.setTheme(NR.CITY_THEME);
       ui.showScreen(to);
       // En pausa sigue la música de carrera, pero amortiguada.
       Audio.setMusic(to === S.PLAYING || to === S.PAUSED ? 'race' : 'menu');
@@ -321,7 +355,7 @@
       if (e.code === 'Escape' || e.code === 'KeyP') {
         if (s === S.PLAYING) pause();
         else if (s === S.PAUSED) resume();
-        else if (s === S.SHOP) ACTIONS.back();
+        else if (s === S.SHOP || s === S.TRACK_SELECT) ACTIONS.back();
         else if ([S.SETTINGS, S.TUTORIAL, S.MISSIONS, S.CHARACTER_SELECT, S.STARTER].includes(s)) fsm.go(S.MENU);
         return;
       }
@@ -331,6 +365,9 @@
       } else if (s === S.CHARACTER_SELECT) {
         if (e.code === 'ArrowRight' || e.code === 'KeyD') garage.step(1);
         else if (e.code === 'ArrowLeft' || e.code === 'KeyA') garage.step(-1);
+      } else if (s === S.TRACK_SELECT) {
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') trackSelect.step(1);
+        else if (e.code === 'ArrowLeft' || e.code === 'KeyA') trackSelect.step(-1);
       } else if (s === S.MENU && e.code === 'Enter' && document.activeElement === document.body) {
         goGarage();
       }
@@ -424,7 +461,7 @@
     start();
 
     // Acceso para depuración desde la consola: NR.app
-    NR.app = { fsm, ui, backdrop, game, input, garage, starter, shop, storage: NR.Storage, audio: Audio };
+    NR.app = { fsm, ui, backdrop, game, input, garage, starter, trackSelect, shop, storage: NR.Storage, audio: Audio };
   }
 
   if (document.readyState === 'loading') {

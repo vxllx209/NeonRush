@@ -23,7 +23,7 @@ fuentes del sistema como respaldo.
 
 ## Flujo del juego
 
-`MENU → PLAY NOW → (primera vez: ELIGE TU PRIMER AUTO) → GARAGE (pintura, estela, efecto) → RACE → (tutorial la primera vez) → carrera → GAME OVER → TRY AGAIN / GARAGE / MENU`
+`MENU → PLAY NOW → (primera vez: ELIGE TU PRIMER AUTO) → GARAGE (taller, pintura, estela, efecto) → RACE → ELIGE LA PISTA → (tutorial la primera vez) → carrera → GAME OVER → TRY AGAIN / GARAGE / MENU`
 
 **Primer auto gratis:** antes de la primera carrera se muestran los 21 autos.
 El que elijas es gratis, sea cual sea, y se entrega una sola vez. Después solo
@@ -71,6 +71,25 @@ La hitbox es la misma para todos y el juego es justo con cualquier auto: un bot
 de prueba sobrevive 3 minutos tanto con el más barato como con el más caro. En
 el garaje, las barras de otro auto se comparan con las del auto equipado.
 
+**Taller (mejoras):** en el garaje, cada cualidad de un auto propio se puede
+mejorar hasta 5 niveles (+0,5 por nivel, tope 10). El precio sube con el nivel y
+con el valor del auto (NEO-1: 90 → 450; OUTLAW: 360 → 1.800). Las mejoras se
+notan en la carrera (p. ej. el manejo de NEO-1 pasa de 12,8 a 17,5 con 5 niveles)
+y la parte mejorada de cada barra se ve en verde.
+
+**Pistas:** 5 escenarios con efectos distintos en la carrera. Se eligen justo
+antes de correr, con vista previa en vivo del escenario.
+
+| Pista | Escenario | Efecto | Puntos | Precio |
+|---|---|---|---|---|
+| NEON CITY | Ciudad nocturna de neón | Normal | x1 | Gratis |
+| SUNSET COAST | Atardecer synthwave, sol, palmeras | Más orbes (~+17 %) | x1 | 400 |
+| DUNE STORM | Desierto rojo, dunas, mesetas | Tormenta de arena: visibilidad reducida | x1,25 | 900 |
+| FROST GRID | Montañas nevadas, aurora, nieve | Asfalto helado: giros y frenadas más lentos | x1,3 | 1.400 |
+| ORBITAL RING | Espacio, planeta, estaciones | Más tráfico y compuertas, +10 % de velocidad | x1,45 | 2.200 |
+
+Todas las pistas son superables con el auto más débil (prueba con bot: 150 s).
+
 **Tienda:** autos, 6 pinturas, 5 estelas y 4 efectos (neón inferior, chispas,
 aura). Comprueba el saldo antes de comprar, impide compras duplicadas y nunca
 deja el saldo en negativo.
@@ -103,7 +122,7 @@ deja el saldo en negativo.
 - El tiempo de reacción baja de 1,2 s a 0,62 s.
 - Aparecen patrones nuevos a los 14 s y a los 42 s.
 
-**Misiones:** 12 contratos (orbes, supervivencia, puntos, escudo, esquivas, nitro,
+**Misiones:** 14 contratos (orbes, supervivencia, puntos, escudo, esquivas, nitro, mejoras, pistas,
 etc.). La recompensa se cobra en MISSIONS y solo una vez.
 
 **Audio** (todo sintetizado con WebAudio):
@@ -146,7 +165,8 @@ css/
   game.css         HUD, medidores, power-ups, cuenta atrás, game over
 js/
   config.js        constantes: paleta, gameplay, dificultad, puntuación
-  catalog.js       autos, pinturas, estelas, efectos
+  tracks.js        pistas: escenario visual y efectos en la carrera
+  catalog.js       autos, cualidades, mejoras, pinturas, estelas, efectos
   utils.js         utilidades puras
   storage.js       LocalStorage seguro y versionado
   state.js         máquina de estados
@@ -161,7 +181,8 @@ js/
   game.js          núcleo de la carrera
   input.js         teclado + gestos táctiles
   missions.js      misiones y recompensas
-  garage.js        garaje: vista previa animada y selección
+  garage.js        garaje: vista previa, taller de mejoras y barras de cualidades
+  trackselect.js   selección de pista con vista previa en vivo
   shop.js          tienda y economía
   tutorial.js      tutorial de 5 pasos
   interface.js     pantallas, HUD, paneles, toasts

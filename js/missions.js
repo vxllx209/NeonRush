@@ -25,6 +25,8 @@
     { id: 'distance2000', name: 'MARATÓN', desc: 'Recorre 2.000 m en una carrera.', scope: 'run', run: 'distance', goal: 2000, reward: 300 },
     { id: 'games10', name: 'PILOTO HABITUAL', desc: 'Completa 10 carreras.', scope: 'total', stat: 'gamesPlayed', run: 'one', goal: 10, reward: 250 },
     { id: 'score10000', name: 'LEYENDA', desc: 'Alcanza 10.000 puntos en una carrera.', scope: 'run', run: 'score', goal: 10000, reward: 600 },
+    { id: 'upgrade1', name: 'TALLER', desc: 'Compra una mejora para un auto en el garaje.', scope: 'total', stat: 'upgradesBought', run: 'none', goal: 1, reward: 100 },
+    { id: 'track1', name: 'TROTAMUNDOS', desc: 'Desbloquea una pista nueva.', scope: 'total', stat: 'tracksUnlocked', run: 'none', goal: 1, reward: 150 },
     { id: 'orbs1000', name: 'CENTRAL ELÉCTRICA', desc: 'Recolecta 1.000 orbes (acumulado).', scope: 'total', stat: 'totalOrbs', run: 'orbs', goal: 1000, reward: 800 },
   ]);
 

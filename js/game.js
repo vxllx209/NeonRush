@@ -44,6 +44,8 @@
       this._keepRow = (r) => !r.counted;
 
       this.reducedEffects = false;
+      this.theme = NR.CITY_THEME;
+      this.mods = null;
       this.distance = 0;
       this.committed = true; // no hay carrera que registrar todavía
       this.resize();
@@ -60,9 +62,17 @@
     /* Ciclo de vida                                                    */
     /* ---------------------------------------------------------------- */
 
-    newRun({ equipped = {}, bestScore = 0, reducedEffects = false } = {}) {
+    newRun({ equipped = {}, upgrades = null, bestScore = 0, reducedEffects = false } = {}) {
       this.reducedEffects = reducedEffects;
-      this.car.reset(equipped);
+      this.track = NR.CATALOG.find('tracks', equipped.track) || NR.TRACKS[0];
+      this.mods = Object.assign({ score: 1, speed: 1, handling: 1, grip: 1, orbs: 0, patterns: {} }, this.track.mods);
+      this.theme = this.track.theme;
+      this.world.setTheme(this.theme);
+      this.backdrop.setTheme(this.theme);
+      this.car.reset(equipped, upgrades);
+      // Condiciones de la pista sobre la conducción (p. ej. asfalto helado).
+      this.car.laneRate *= this.mods.handling;
+      this.car.brakeSpeed = 1 - (1 - this.car.brakeSpeed) * this.mods.grip;
       this.spawner.reset();
       this.obstacles.length = 0;
       this.orbs.length = 0;
@@ -95,6 +105,7 @@
       this.flash = 0;
       this.animTime = 0;
       this._speedLineT = 0;
+      this._ambientT = 0;
       this.cam.panX = 0;
 
       this.spawner.update(0, this.difficulty());
@@ -139,7 +150,8 @@
 
     /** Multiplicador total de puntos (nivel × power-up x2). */
     get scoreMult() {
-      return this.mult * (this.power.multiplier > 0 ? 2 : 1);
+      const track = this.mods ? this.mods.score : 1;
+      return Math.round(this.mult * track * (this.power.multiplier > 0 ? 2 : 1) * 100) / 100;
     }
 
     /** Bonificación externa (p. ej. misión completada). */
@@ -156,7 +168,7 @@
     difficulty() {
       const t = this.time;
       const d = this._diff;
-      d.speed = G.SPEED_MIN + (G.SPEED_MAX - G.SPEED_MIN) * (1 - Math.exp(-t / G.SPEED_TAU));
+      d.speed = (G.SPEED_MIN + (G.SPEED_MAX - G.SPEED_MIN) * (1 - Math.exp(-t / G.SPEED_TAU))) * (this.mods ? this.mods.speed : 1);
       d.gap = G.GAP_MIN + (G.GAP_MAX - G.GAP_MIN) * Math.exp(-t / G.GAP_TAU);
       d.tier = t >= G.TIER_2_TIME ? 2 : t >= G.TIER_1_TIME ? 1 : 0;
       return d;
@@ -301,6 +313,7 @@
 
       this._cleanup();
       this._spawnSpeedLines(dt);
+      this._spawnAmbient(dt);
       this._updateFx(dt);
       this.events.onHud(this);
     }
@@ -484,13 +497,47 @@
         const x0 = cam.sx(X, z0), y0 = cam.sy(Y, z0);
         const x1 = cam.sx(X, -1), y1 = cam.sy(Y, -1);
         const life = lerp(0.35, 0.55, Math.random()) * (20 / this.speed);
-        const color = this.car.nitroActive ? C.white : side < 0 ? C.cyan : C.pink;
+        const color = this.car.nitroActive ? C.white : this.theme.edges[side < 0 ? 0 : 1];
         this.particles.spawn({
           x: x0, y: y0,
           vx: (x1 - x0) / life * 0.4, vy: (y1 - y0) / life * 0.4,
           ax: (x1 - x0) / (life * life) * 1.2, ay: (y1 - y0) / (life * life) * 1.2,
           life, size: lerp(0.8, 1.6, Math.random()), color, alpha: 0.5, streak: 0.05,
         });
+      }
+    }
+
+    /** Clima de la pista: nieve, arena o estrellas que pasan. */
+    _spawnAmbient(dt) {
+      const kind = this.theme.particles;
+      if (this.reducedEffects || kind === 'motes') return;
+      const cam = this.cam;
+      const colors = this.theme.particleColors;
+      this._ambientT += dt * (kind === 'stars' ? 40 : 28);
+      while (this._ambientT >= 1) {
+        this._ambientT -= 1;
+        if (kind === 'snow') {
+          this.particles.spawn({
+            x: Math.random() * cam.w * 1.2 - cam.w * 0.1, y: -5,
+            vx: lerp(-40, 10, Math.random()), vy: lerp(80, 180, Math.random()),
+            life: lerp(3, 6, Math.random()), size: lerp(0.8, 2.4, Math.random()), color: pick(colors), alpha: 0.85,
+          });
+        } else if (kind === 'sand') {
+          this.particles.spawn({
+            x: cam.w + 10, y: cam.h * lerp(0.15, 1, Math.random()),
+            vx: -lerp(500, 900, Math.random()), vy: lerp(-20, 40, Math.random()),
+            life: lerp(1, 2, Math.random()), size: lerp(0.6, 1.5, Math.random()), color: pick(colors), alpha: 0.5, streak: 0.025,
+          });
+        } else if (kind === 'stars') {
+          const a = Math.random() * Math.PI * 2;
+          const v = lerp(200, 500, Math.random()) * (this.speed / 20);
+          this.particles.spawn({
+            x: cam.vpX, y: cam.horizonY - cam.h * 0.08,
+            vx: Math.cos(a) * v, vy: Math.sin(a) * v * 0.6,
+            ax: Math.cos(a) * v * 1.5, ay: Math.sin(a) * v,
+            life: lerp(0.8, 1.4, Math.random()), size: lerp(0.6, 1.4, Math.random()), color: pick(colors), alpha: 0.7, streak: 0.04,
+          });
+        }
       }
     }
 
@@ -562,6 +609,7 @@
       }
       if (!carDrawn) this.car.draw(ctx, cam, t, fx);
 
+      if (this.theme.fog) this._drawFog(ctx, this.theme.fog);
       this.particles.draw(ctx);
       this._drawPopups(ctx);
       ctx.restore();
@@ -585,6 +633,21 @@
         ctx.fillStyle = `rgba(8,11,22,${k * 0.55})`;
         ctx.fillRect(0, 0, cam.w, cam.h);
       }
+    }
+
+    /** Niebla que oculta lo lejano: los obstáculos aparecen de entre la arena. */
+    _drawFog(ctx, fog) {
+      const cam = this.cam;
+      const yFar = cam.groundY(fog.far);
+      const yNear = cam.groundY(fog.near);
+      const swirl = 0.05 * Math.sin(this.animTime * 1.3);
+      const g = ctx.createLinearGradient(0, 0, 0, yNear);
+      g.addColorStop(0, `rgba(${fog.color},0.55)`);
+      g.addColorStop(clamp(cam.horizonY / yNear, 0, 1), `rgba(${fog.color},${0.88 + swirl})`);
+      g.addColorStop(clamp(yFar / yNear, 0, 1), `rgba(${fog.color},${0.85 + swirl})`);
+      g.addColorStop(1, `rgba(${fog.color},0)`);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, cam.w, yNear);
     }
 
     _drawPopups(ctx) {

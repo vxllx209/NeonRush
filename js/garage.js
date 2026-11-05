@@ -74,9 +74,14 @@
       this.q('name').textContent = car.name;
       this.q('desc').textContent = car.desc;
       this.q('coins').textContent = formatNumber(save.coins);
+      // Cualidades: las propias incluyen mejoras y botones del taller;
+      // las de un auto bloqueado se comparan con el auto equipado (ya mejorado).
       const equipped = CAT.find('cars', save.equipped.car);
-      StatsView.render(this.q('stats'), car.stats, {
-        compare: equipped && equipped.id !== car.id ? equipped.stats : null,
+      const stats = CAT.effectiveStats(car.id, owned ? save.upgrades : null);
+      StatsView.render(this.q('stats'), stats, {
+        base: car.stats,
+        compare: equipped && equipped.id !== car.id ? CAT.effectiveStats(equipped.id, save.upgrades) : null,
+        upgrade: owned ? { car, levels: CAT.upgradeLevels(car.id, save.upgrades), coins: save.coins } : null,
       });
 
       const dots = this.q('dots');
@@ -252,13 +257,17 @@
 
   /**
    * Barras de cualidades de un auto (garaje, garaje inicial y tienda).
-   * `compare`: cualidades de otro auto (el equipado) que se marcan como
-   * referencia; la diferencia se colorea en verde (mejor) o rosa (peor).
+   * @param stats   cualidades finales (de serie + mejoras)
+   * @param base    cualidades de serie: la parte mejorada se pinta en verde
+   * @param compare cualidades de otro auto (el equipado) como referencia;
+   *                la diferencia se colorea en verde (mejor) o rosa (peor)
+   * @param upgrade { car, levels, coins }: muestra los botones del taller
    */
   const StatsView = {
-    render(el, stats, { compare = null, compact = false } = {}) {
+    render(el, stats, { compare = null, compact = false, base = null, upgrade = null } = {}) {
       if (!el || !stats) return;
       el.classList.toggle('car-stats--compact', compact);
+      el.classList.toggle('car-stats--upgrade', !!upgrade);
       const rows = CAT.STATS.map(({ key, label }) => {
         const v = stats[key];
         const row = document.createElement('div');
@@ -269,6 +278,11 @@
         const bar = document.createElement('i');
         bar.className = 'stat__bar';
         bar.style.setProperty('--v', `${Math.round(v * 100)}%`);
+        if (base && base[key] < v) {
+          // Proporción de la barra que es de serie (el resto es mejora).
+          bar.style.setProperty('--b', `${Math.round((base[key] / v) * 100)}%`);
+          bar.dataset.upgraded = '1';
+        }
         if (compare) {
           const c = compare[key];
           bar.style.setProperty('--m', `${Math.round(c * 100)}%`);
@@ -278,12 +292,39 @@
         value.className = 'stat__value';
         value.textContent = (v * 10).toFixed(1);
         row.append(name, bar, value);
+
+        if (upgrade) {
+          const level = upgrade.levels[key];
+          const pips = document.createElement('span');
+          pips.className = 'stat__pips';
+          pips.title = `Nivel ${level} de ${CAT.MAX_UPGRADE}`;
+          for (let i = 0; i < CAT.MAX_UPGRADE; i++) {
+            const p = document.createElement('i');
+            p.classList.toggle('is-on', i < level);
+            pips.append(p);
+          }
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'stat__up';
+          if (level >= CAT.MAX_UPGRADE || v >= 1) {
+            btn.textContent = 'MAX';
+            btn.disabled = true;
+          } else {
+            const cost = CAT.upgradeCost(upgrade.car, level);
+            btn.textContent = `▲ ${formatNumber(cost)}`;
+            btn.title = `Mejorar ${label.toLowerCase()} (+${(CAT.UPGRADE_STEP * 10).toFixed(1)}) por ${formatNumber(cost)} de energía`;
+            btn.dataset.action = 'upgrade';
+            btn.dataset.stat = key;
+            btn.classList.toggle('is-short', upgrade.coins < cost);
+          }
+          row.append(pips, btn);
+        }
         return row;
       });
       const head = document.createElement('div');
       head.className = 'stat-rating';
       const r = CAT.rating(stats);
-      head.innerHTML = `<span>RATING</span><b>${r.toFixed(1)}</b>`;
+      head.innerHTML = `<span>${upgrade ? 'TALLER · RATING' : 'RATING'}</span><b>${r.toFixed(1)}</b>`;
       if (compare) {
         const d = r - CAT.rating(compare);
         if (Math.abs(d) >= 0.05) {

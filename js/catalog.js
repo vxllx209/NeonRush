@@ -193,12 +193,42 @@
     { id: 'aura', name: 'AURA HOLOGRÁFICA', price: 800, desc: 'Contorno holográfico pulsante.' },
   ]);
 
-  const CATEGORIES = Object.freeze({ cars: CARS, paints: PAINTS, trails: TRAILS, effects: EFFECTS });
+  const TRACKS = NR.TRACKS;
+
+  const CATEGORIES = Object.freeze({ cars: CARS, paints: PAINTS, trails: TRAILS, effects: EFFECTS, tracks: TRACKS });
 
   /** Valor equipado por defecto de cada categoría (gratuito). */
-  const DEFAULTS = Object.freeze({ cars: 'neo', paints: 'factory', trails: 'stream', effects: 'none' });
+  const DEFAULTS = Object.freeze({ cars: 'neo', paints: 'factory', trails: 'stream', effects: 'none', tracks: 'city' });
 
   const find = (category, id) => (CATEGORIES[category] || []).find((item) => item.id === id) || null;
+
+  /* ---------------- Mejoras (taller) ---------------- */
+
+  /** Niveles por cualidad y cuánto suma cada nivel (0,05 = +0,5 en la escala de 10). */
+  const MAX_UPGRADE = 5;
+  const UPGRADE_STEP = 0.05;
+
+  /** Precio del siguiente nivel: sube con el nivel y con el valor del auto. */
+  function upgradeCost(car, level) {
+    return Math.round(((60 + car.price * 0.1) * (level + 1)) / 10) * 10;
+  }
+
+  /** Niveles comprados de un auto: { accel, top, brake, handling } (0..MAX_UPGRADE). */
+  function upgradeLevels(carId, upgrades) {
+    const u = (upgrades && upgrades[carId]) || {};
+    const out = {};
+    for (const { key } of STATS) out[key] = Math.max(0, Math.min(MAX_UPGRADE, Math.floor(u[key] || 0)));
+    return out;
+  }
+
+  /** Cualidades finales = de serie + mejoras (tope 1,0 = 10). */
+  function effectiveStats(carId, upgrades) {
+    const car = find('cars', carId) || CARS[0];
+    const lv = upgradeLevels(car.id, upgrades);
+    const out = {};
+    for (const { key } of STATS) out[key] = Math.min(1, Math.round((car.stats[key] + lv[key] * UPGRADE_STEP) * 100) / 100);
+    return out;
+  }
 
   /** Colores finales del auto: colores del modelo + pintura equipada. */
   function resolveColors(carId, paintId) {
@@ -207,5 +237,9 @@
     return Object.assign({}, car.colors, paint && paint.colors ? paint.colors : null);
   }
 
-  NR.CATALOG = Object.freeze({ CARS, PAINTS, TRAILS, EFFECTS, CATEGORIES, DEFAULTS, STATS, rating, find, resolveColors });
+  NR.CATALOG = Object.freeze({
+    CARS, PAINTS, TRAILS, EFFECTS, TRACKS, CATEGORIES, DEFAULTS, STATS,
+    MAX_UPGRADE, UPGRADE_STEP,
+    rating, find, resolveColors, upgradeCost, upgradeLevels, effectiveStats,
+  });
 })(window.NR);

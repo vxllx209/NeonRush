@@ -17,7 +17,7 @@
   const { clamp, deepClone } = NR.util;
   const CAT = NR.CATALOG;
 
-  const EQUIP_KEYS = { cars: 'car', paints: 'paint', trails: 'trail', effects: 'effect' };
+  const EQUIP_KEYS = { cars: 'car', paints: 'paint', trails: 'trail', effects: 'effect', tracks: 'track' };
 
   function defaults() {
     return {
@@ -31,14 +31,17 @@
         paints: [CAT.DEFAULTS.paints],
         trails: [CAT.DEFAULTS.trails],
         effects: [CAT.DEFAULTS.effects],
+        tracks: [CAT.DEFAULTS.tracks],
       },
       equipped: {
         car: null, // ningún auto hasta elegir el primero
         paint: CAT.DEFAULTS.paints,
         trail: CAT.DEFAULTS.trails,
         effect: CAT.DEFAULTS.effects,
+        track: CAT.DEFAULTS.tracks,
       },
       missions: {},
+      upgrades: {}, // { carId: { accel, top, brake, handling } } niveles 0..5
       settings: {
         musicVolume: 0.6,
         sfxVolume: 0.8,
@@ -56,6 +59,8 @@
         multipliersUsed: 0,
         nitrosUsed: 0,
         obstaclesDodged: 0,
+        upgradesBought: 0,
+        tracksUnlocked: 0,
       },
     };
   }
@@ -105,6 +110,15 @@
       }
     }
 
+    // Mejoras: solo de autos que se poseen; niveles enteros 0..MAX_UPGRADE.
+    if (isObject(raw.upgrades)) {
+      for (const [carId, lv] of Object.entries(raw.upgrades)) {
+        if (!d.unlocked.cars.includes(carId) || !isObject(lv)) continue;
+        const levels = CAT.upgradeLevels(carId, { [carId]: lv });
+        if (Object.values(levels).some((v) => v > 0)) d.upgrades[carId] = levels;
+      }
+    }
+
     if (isObject(raw.settings)) {
       for (const key of Object.keys(d.settings)) {
         const value = raw.settings[key];
@@ -138,6 +152,10 @@
       // existentes conservan sus autos y también reciben esa elección gratuita.
       raw.starterChosen = false;
       raw.version = 3;
+    }
+    if (raw.version < 4) {
+      // v4: pistas y mejoras. Los valores por defecto los completa sanitize().
+      raw.version = 4;
     }
     return raw;
   }

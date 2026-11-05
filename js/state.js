@@ -11,6 +11,7 @@
     MENU: 'MENU',
     STARTER: 'STARTER',
     CHARACTER_SELECT: 'CHARACTER_SELECT',
+    TRACK_SELECT: 'TRACK_SELECT',
     SHOP: 'SHOP',
     SETTINGS: 'SETTINGS',
     MISSIONS: 'MISSIONS',
@@ -26,7 +27,9 @@
     // STARTER: garaje inicial con todos los autos; el primero que se elige es gratis.
     [S.STARTER]: [S.CHARACTER_SELECT, S.MENU],
     // CHARACTER_SELECT = GARAGE: la "landing page" de elección de auto antes de correr.
-    [S.CHARACTER_SELECT]: [S.MENU, S.SHOP, S.TUTORIAL, S.PLAYING],
+    [S.CHARACTER_SELECT]: [S.MENU, S.SHOP, S.TRACK_SELECT],
+    // TRACK_SELECT: elección de pista con vista previa en vivo, justo antes de correr.
+    [S.TRACK_SELECT]: [S.CHARACTER_SELECT, S.TUTORIAL, S.PLAYING, S.MENU],
     [S.SHOP]: [S.MENU, S.CHARACTER_SELECT],
     [S.SETTINGS]: [S.MENU, S.TUTORIAL],
     [S.MISSIONS]: [S.MENU],

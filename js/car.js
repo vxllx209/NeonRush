@@ -27,9 +27,9 @@
       this.reset({});
     }
 
-    reset({ car = 'neo', paint = 'factory', trail = 'stream', effect = 'none' }) {
+    reset({ car = 'neo', paint = 'factory', trail = 'stream', effect = 'none' }, upgrades = null) {
       const def = NR.CATALOG.find('cars', car) || NR.CATALOG.CARS[0];
-      this.applyStats(def.stats);
+      this.applyStats(NR.CATALOG.effectiveStats(def.id, upgrades));
       this.model = def.model;
       this.colors = NR.CATALOG.resolveColors(def.id, paint);
       this.trail = NR.CATALOG.find('trails', trail) || NR.CATALOG.TRAILS[0];

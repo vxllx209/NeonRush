@@ -12,12 +12,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap">
 
-  <link rel="stylesheet" href="css/style.css?v=1.3.2">
-  <link rel="stylesheet" href="css/animations.css?v=1.3.2">
-  <link rel="stylesheet" href="css/menu.css?v=1.3.2">
-  <link rel="stylesheet" href="css/screens.css?v=1.3.2">
-  <link rel="stylesheet" href="css/garage.css?v=1.3.2">
-  <link rel="stylesheet" href="css/game.css?v=1.3.2">
+  <link rel="stylesheet" href="css/style.css?v=1.4.2">
+  <link rel="stylesheet" href="css/animations.css?v=1.4.2">
+  <link rel="stylesheet" href="css/menu.css?v=1.4.2">
+  <link rel="stylesheet" href="css/screens.css?v=1.4.2">
+  <link rel="stylesheet" href="css/garage.css?v=1.4.2">
+  <link rel="stylesheet" href="css/game.css?v=1.4.2">
 </head>
 <body>
   <!-- Sprite de iconos (se referencian con <use href="#i-...">) -->
@@ -216,6 +216,45 @@
             <svg class="icon"><use href="#i-shop"/></svg> SHOP
           </button>
           <button type="button" class="btn btn--primary" data-garage="primary" data-action="garage-primary">RACE</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TRACK SELECT: elección de pista (vista previa en vivo) ============ -->
+    <section class="screen screen--garage screen--tracks" data-screen="TRACK_SELECT" aria-label="Elige la pista">
+      <header class="garage-top">
+        <button type="button" class="btn btn--text" data-action="back">
+          <svg class="icon"><use href="#i-back"/></svg> GARAGE
+        </button>
+        <span class="panel__kicker">TRACK SELECT // ELIGE LA PISTA</span>
+        <div class="stat-chip stat-chip--energy">
+          <svg class="icon"><use href="#i-energy"/></svg>
+          <span class="stat-chip__value" data-track="coins">0</span>
+        </div>
+      </header>
+
+      <div class="garage-stage">
+        <button type="button" class="garage-arrow" data-action="track-prev" aria-label="Pista anterior">
+          <svg class="icon"><use href="#i-back"/></svg>
+        </button>
+        <span class="track-live">VISTA PREVIA EN VIVO</span>
+        <button type="button" class="garage-arrow" data-action="track-next" aria-label="Pista siguiente">
+          <svg class="icon"><use href="#i-next"/></svg>
+        </button>
+      </div>
+
+      <div class="garage-info track-info">
+        <div class="garage-dots" data-track="dots"></div>
+        <span class="garage-class">PISTA <span data-track="num">1 / 5</span></span>
+        <h2 class="garage-name" data-track="name">NEON CITY</h2>
+        <p class="garage-desc" data-track="desc"></p>
+        <div class="track-tags" data-track="tags"></div>
+        <span class="garage-status" data-track="status"></span>
+        <div class="garage-actions">
+          <button type="button" class="btn" data-action="back">
+            <svg class="icon"><use href="#i-car"/></svg> GARAGE
+          </button>
+          <button type="button" class="btn btn--primary" data-track="primary" data-action="track-primary">START RACE</button>
         </div>
       </div>
     </section>
@@ -484,27 +523,29 @@
     <div class="toast-region" aria-live="polite"></div>
   </div>
 
-  <script src="js/config.js?v=1.3.2"></script>
-  <script src="js/utils.js?v=1.3.2"></script>
-  <script src="js/catalog.js?v=1.3.2"></script>
-  <script src="js/storage.js?v=1.3.2"></script>
-  <script src="js/state.js?v=1.3.2"></script>
-  <script src="js/audio.js?v=1.3.2"></script>
-  <script src="js/effects.js?v=1.3.2"></script>
-  <script src="js/background.js?v=1.3.2"></script>
-  <script src="js/world.js?v=1.3.2"></script>
-  <script src="js/car.js?v=1.3.2"></script>
-  <script src="js/obstacles.js?v=1.3.2"></script>
-  <script src="js/collectibles.js?v=1.3.2"></script>
-  <script src="js/spawner.js?v=1.3.2"></script>
-  <script src="js/game.js?v=1.3.2"></script>
-  <script src="js/input.js?v=1.3.2"></script>
-  <script src="js/missions.js?v=1.3.2"></script>
-  <script src="js/garage.js?v=1.3.2"></script>
-  <script src="js/shop.js?v=1.3.2"></script>
-  <script src="js/starter.js?v=1.3.2"></script>
-  <script src="js/tutorial.js?v=1.3.2"></script>
-  <script src="js/interface.js?v=1.3.2"></script>
-  <script src="js/main.js?v=1.3.2"></script>
+  <script src="js/config.js?v=1.4.2"></script>
+  <script src="js/utils.js?v=1.4.2"></script>
+  <script src="js/tracks.js?v=1.4.2"></script>
+  <script src="js/catalog.js?v=1.4.2"></script>
+  <script src="js/storage.js?v=1.4.2"></script>
+  <script src="js/state.js?v=1.4.2"></script>
+  <script src="js/audio.js?v=1.4.2"></script>
+  <script src="js/effects.js?v=1.4.2"></script>
+  <script src="js/background.js?v=1.4.2"></script>
+  <script src="js/world.js?v=1.4.2"></script>
+  <script src="js/car.js?v=1.4.2"></script>
+  <script src="js/obstacles.js?v=1.4.2"></script>
+  <script src="js/collectibles.js?v=1.4.2"></script>
+  <script src="js/spawner.js?v=1.4.2"></script>
+  <script src="js/game.js?v=1.4.2"></script>
+  <script src="js/input.js?v=1.4.2"></script>
+  <script src="js/missions.js?v=1.4.2"></script>
+  <script src="js/garage.js?v=1.4.2"></script>
+  <script src="js/trackselect.js?v=1.4.2"></script>
+  <script src="js/shop.js?v=1.4.2"></script>
+  <script src="js/starter.js?v=1.4.2"></script>
+  <script src="js/tutorial.js?v=1.4.2"></script>
+  <script src="js/interface.js?v=1.4.2"></script>
+  <script src="js/main.js?v=1.4.2"></script>
 </body>
 </html>

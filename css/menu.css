@@ -1,0 +1,254 @@
+/* =====================================================================
+   NEON RUSH — Menú principal
+   ===================================================================== */
+
+.screen--menu {
+  align-items: center;
+  padding:
+    calc(14px + var(--safe-t))
+    calc(clamp(14px, 4vw, 40px) + var(--safe-r))
+    calc(12px + var(--safe-b))
+    calc(clamp(14px, 4vw, 40px) + var(--safe-l));
+}
+
+/* ---------- Barra superior ---------- */
+.menu-topbar {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ---------- Bloque central ---------- */
+.menu-main {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 2.4vh, 24px);
+  padding-bottom: 2vh;
+}
+
+/* ---------- Logotipo ---------- */
+.logo {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(3.4rem, 15vw, 8rem);
+  line-height: 0.92;
+  letter-spacing: 0.03em;
+  text-align: center;
+}
+
+.logo__word { position: relative; display: block; }
+.logo__text { position: relative; display: inline-block; }
+
+/* NEON: tubo de neón en contorno. */
+.logo__word--neon {
+  animation: nr-neon-on 1.3s steps(1, end) 0.1s both;
+}
+
+.logo__word--neon .logo__text {
+  color: transparent;
+  -webkit-text-stroke: clamp(1.5px, 0.28vw, 2.5px) var(--c-cyan);
+  filter:
+    drop-shadow(0 0 4px rgba(0, 217, 255, 0.95))
+    drop-shadow(0 0 20px rgba(0, 217, 255, 0.45));
+}
+
+/* RUSH: bloque sólido inclinado con aberración cromática. */
+.logo__word--rush {
+  margin-top: -0.02em;
+  animation: nr-rush-in 0.75s var(--ease-out) 0.55s both;
+}
+
+.logo__word--rush .logo__text {
+  padding: 0 0.06em;
+  transform: skewX(-10deg);
+  background: linear-gradient(180deg, var(--c-white) 12%, #a8f1ff 42%, var(--c-cyan) 62%, var(--c-purple) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter:
+    drop-shadow(0.045em 0 0 rgba(255, 54, 200, 0.85))
+    drop-shadow(0 0 18px rgba(0, 217, 255, 0.35));
+}
+
+/* Líneas de velocidad detrás de RUSH. */
+.logo__word--rush::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 24%;
+  width: 0.9em;
+  height: 52%;
+  margin-right: -0.04em;
+  background: repeating-linear-gradient(to bottom, var(--c-pink) 0 0.055em, transparent 0.055em 0.17em);
+  -webkit-mask-image: linear-gradient(to left, #000 10%, transparent);
+  mask-image: linear-gradient(to left, #000 10%, transparent);
+  transform: skewX(-10deg);
+  opacity: 0.9;
+}
+
+/* Glitch periódico sobre ambas palabras. */
+.logo__text::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  padding: inherit;
+  color: var(--c-pink);
+  -webkit-text-stroke: 0;
+  background: none;
+  opacity: 0;
+  pointer-events: none;
+  animation: nr-glitch 7s steps(1, end) 2.4s infinite;
+}
+
+.logo__word--rush .logo__text::after {
+  color: var(--c-cyan);
+  -webkit-text-fill-color: var(--c-cyan);
+  animation-delay: 2.55s;
+}
+
+.logo-rule {
+  width: min(78%, 400px);
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--c-cyan) 30%, var(--c-pink) 70%, transparent);
+  box-shadow: 0 0 12px rgba(0, 217, 255, 0.5);
+  animation: nr-rule 0.9s var(--ease-out) 0.85s both;
+}
+
+/* ---------- Subtítulo ---------- */
+.tagline {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.2em 1.1em;
+  font: 700 clamp(0.95rem, 2.6vw, 1.3rem)/1 var(--font-body);
+  letter-spacing: 0.42em;
+  color: var(--c-white);
+}
+
+.tagline__w { animation: nr-fade-up 0.6s var(--ease-out) both; }
+.tagline__w i { font-style: normal; }
+.tagline__w--1 { animation-delay: 0.9s; }
+.tagline__w--2 { animation-delay: 0.98s; }
+.tagline__w--3 { animation-delay: 1.06s; }
+.tagline__w--1 i { color: var(--c-cyan); text-shadow: 0 0 8px var(--c-cyan); }
+.tagline__w--2 i { color: var(--c-pink); text-shadow: 0 0 8px var(--c-pink); }
+.tagline__w--3 i { color: var(--c-green); text-shadow: 0 0 8px var(--c-green); }
+
+/* ---------- Acciones ---------- */
+.menu-actions {
+  width: min(100%, 460px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: clamp(4px, 1.6vh, 16px);
+}
+
+.menu-actions .btn--primary { width: 100%; }
+
+.menu-actions__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.tile-badge {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--c-green);
+  color: var(--c-ink);
+  font: 900 0.6rem/18px var(--font-display);
+  letter-spacing: 0;
+  box-shadow: 0 0 10px var(--c-green);
+  animation: badge-pulse 1.4s ease-in-out infinite;
+}
+.tile-badge[hidden] { display: none; }
+
+@keyframes badge-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+.menu-actions__grid > .enter { display: flex; }
+
+.btn--tile {
+  --cut: 10px;
+  --btn-edge: var(--tile-c);
+  --btn-glow: var(--tile-c);
+  flex: 1;
+  flex-direction: column;
+  gap: 0.55em;
+  min-height: 82px;
+  padding: 0.9em 0.5em;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-align: center;
+}
+
+.btn--tile::before { opacity: 0.3; }
+
+.btn--tile .icon {
+  width: 24px;
+  height: 24px;
+  color: var(--tile-c);
+  filter: drop-shadow(0 0 6px var(--tile-c));
+  transition: transform var(--t-med) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .btn--tile:hover .icon { transform: translateY(-2px) scale(1.08); }
+}
+
+/* ---------- Pie ---------- */
+.menu-footer {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font: 500 0.6rem/1.4 var(--font-display);
+  letter-spacing: 0.22em;
+  color: var(--c-gray);
+  opacity: 0.7;
+}
+
+/* ---------- Responsive ---------- */
+@media (orientation: portrait) {
+  .logo { font-size: clamp(3.4rem, 19vw, 8rem); }
+}
+
+@media (max-width: 520px) {
+  .menu-actions__grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .btn--tile { flex-direction: row; justify-content: flex-start; min-height: 52px; padding-left: 1em; font-size: 0.64rem; }
+  .btn--tile .icon { width: 20px; height: 20px; }
+  .menu-footer__sector { display: none; }
+}
+
+/* Teléfonos en horizontal: poca altura disponible. */
+@media (max-height: 540px) and (orientation: landscape) {
+  .logo { font-size: clamp(2.2rem, 13vh, 4.4rem); }
+  .menu-main { gap: 8px; padding-bottom: 0; }
+  .menu-actions { margin-top: 2px; gap: 8px; }
+  .btn--primary { padding: 0.8em 2em; }
+  .btn--tile { flex-direction: row; min-height: 44px; padding: 0.6em 0.5em; }
+  .btn--tile .icon { width: 18px; height: 18px; }
+  .tagline { font-size: 0.85rem; }
+}

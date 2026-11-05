@@ -1,0 +1,198 @@
+/* =====================================================================
+   NEON RUSH — GARAGE (landing de selección de auto)
+   ===================================================================== */
+
+.screen--garage {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto minmax(180px, 1fr) auto;
+  padding:
+    calc(12px + var(--safe-t)) calc(clamp(12px, 3vw, 32px) + var(--safe-r))
+    calc(14px + var(--safe-b)) calc(clamp(12px, 3vw, 32px) + var(--safe-l));
+  gap: 8px;
+}
+
+.garage-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.garage-top .btn--text { gap: 0.3em; }
+
+.garage-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 0;
+}
+
+.garage-canvas {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: block;
+  touch-action: pan-y;
+  cursor: grab;
+}
+
+.garage-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  transform: translateY(-50%);
+  border: 1px solid rgba(0, 217, 255, 0.45);
+  background: rgba(9, 13, 28, 0.75);
+  color: var(--c-cyan);
+  cursor: pointer;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast);
+}
+.garage-arrow:first-child { left: 0; }
+.garage-arrow:last-child { right: 0; }
+.garage-arrow .icon { width: 24px; height: 24px; }
+.garage-arrow:hover, .garage-arrow:focus-visible { background: var(--c-cyan); color: var(--c-ink); outline: none; }
+.garage-arrow:active { transform: translateY(-50%) scale(0.94); }
+
+.garage-info {
+  width: min(100%, 620px);
+  justify-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.garage-dots { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; max-width: 100%; }
+.garage-dots i {
+  width: 12px;
+  height: 3px;
+  background: var(--c-line);
+  transition: background var(--t-med), box-shadow var(--t-med);
+}
+.garage-dots i.is-locked { background: rgba(146, 155, 181, 0.12); }
+.garage-dots i.is-on { background: var(--c-cyan); box-shadow: 0 0 8px var(--c-cyan); }
+
+.garage-class {
+  font: 700 0.6rem/1 var(--font-display);
+  letter-spacing: 0.3em;
+  color: var(--c-pink);
+}
+
+.garage-name {
+  margin: 0;
+  font: 900 clamp(1.8rem, 6vw, 2.8rem)/1 var(--font-display);
+  letter-spacing: 0.06em;
+  color: var(--c-white);
+  text-shadow: 0 0 22px rgba(0, 217, 255, 0.45);
+}
+
+.garage-desc {
+  margin: 0;
+  max-width: 46ch;
+  font: 500 1.02rem/1.3 var(--font-body);
+  color: #c9cfe3;
+}
+
+.garage-status {
+  font: 700 0.62rem/1 var(--font-display);
+  letter-spacing: 0.2em;
+  padding: 6px 10px;
+  border: 1px solid var(--c-line);
+}
+.garage-status.is-owned { color: var(--c-green); border-color: rgba(57, 255, 136, 0.45); }
+.garage-status.is-locked { color: var(--c-pink); border-color: rgba(255, 54, 200, 0.45); }
+
+.garage-custom {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 10px 12px;
+  background: rgba(9, 13, 28, 0.6);
+  border: 1px solid var(--c-line);
+}
+
+.custom-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.custom-row > span {
+  width: 72px;
+  flex: none;
+  text-align: left;
+  font: 700 0.56rem/1 var(--font-display);
+  letter-spacing: 0.2em;
+  color: var(--c-gray);
+}
+
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.swatch {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--c-line);
+  cursor: pointer;
+  transition: transform var(--t-fast), box-shadow var(--t-fast), border-color var(--t-fast);
+}
+.swatch:hover, .swatch:focus-visible { transform: translateY(-2px); outline: none; border-color: var(--c-white); }
+.swatch.is-on { border: 2px solid var(--c-white); box-shadow: 0 0 10px rgba(0, 217, 255, 0.7); }
+.swatch--more {
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--c-cyan);
+  font: 700 1rem/1 var(--font-display);
+  border-style: dashed;
+}
+
+.garage-actions {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.garage-actions .btn--primary {
+  letter-spacing: 0.16em;
+  font-size: clamp(0.85rem, 3.4vw, 1.15rem);
+  padding-inline: 1em;
+  white-space: nowrap;
+}
+
+@media (max-width: 460px) {
+  .garage-top .panel__kicker { display: none; }
+  .garage-arrow { width: 44px; height: 44px; }
+}
+
+/* Tienda / misiones: el panel ocupa la altura y la rejilla hace scroll. */
+.panel--wide { height: min(100%, 880px); }
+.panel--wide .shop-grid,
+.panel--wide .missions { flex: 1; }
+
+@media (max-height: 640px) {
+  .garage-desc { display: none; }
+  .garage-custom { padding: 6px 10px; gap: 4px; }
+  .swatch { width: 26px; height: 26px; }
+}
+
+@media (max-height: 540px) and (orientation: landscape) {
+  .screen--garage {
+    grid-template-columns: 1.2fr 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .garage-top { grid-column: 1 / -1; }
+  .garage-info { align-self: center; gap: 4px; }
+  .garage-name { font-size: 1.6rem; }
+  .garage-status { display: none; }
+}

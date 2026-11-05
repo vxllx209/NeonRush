@@ -1,0 +1,317 @@
+/* =====================================================================
+   NEON RUSH — Base: tokens de diseño, reset y componentes primitivos
+   ===================================================================== */
+
+:root {
+  /* Paleta */
+  --c-bg: #080B16;
+  --c-bg-2: #10172A;
+  --c-cyan: #00D9FF;
+  --c-purple: #8B5CF6;
+  --c-pink: #FF36C8;
+  --c-green: #39FF88;
+  --c-white: #F5F7FF;
+  --c-gray: #929BB5;
+
+  /* Derivados */
+  --c-ink: #050812;
+  --c-panel: rgba(16, 23, 42, 0.7);
+  --c-panel-strong: rgba(9, 13, 28, 0.92);
+  --c-line: rgba(146, 155, 181, 0.22);
+
+  /* Tipografía */
+  --font-display: 'Orbitron', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Rajdhani', 'Segoe UI', system-ui, sans-serif;
+
+  /* Movimiento */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --t-fast: 140ms;
+  --t-med: 320ms;
+  --t-slow: 700ms;
+
+  /* Geometría: esquinas cortadas, firma visual de la interfaz */
+  --cut: 12px;
+  --clip-cut: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+
+  /* Áreas seguras (notch) */
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+
+  /* Capas */
+  --z-backdrop: 0;
+  --z-overlay: 1;
+  --z-screen: 2;
+  --z-toast: 10;
+}
+
+/* ---------- Reset ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--c-bg);
+  color: var(--c-white);
+  font-family: var(--font-body);
+  font-size: 16px;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+button { font: inherit; color: inherit; }
+
+/* Barras de desplazamiento acordes al tema. */
+* { scrollbar-width: thin; scrollbar-color: rgba(0, 217, 255, 0.5) transparent; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0, 217, 255, 0.45); border-radius: 3px; }
+svg.icon { width: 1.25em; height: 1.25em; flex: none; }
+
+/* ---------- Estructura ---------- */
+.app {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-backdrop);
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Viñeta + scanlines muy sutiles: unifican escena e interfaz. */
+.fx-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-overlay);
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 120% 90% at 50% 45%, transparent 55%, rgba(3, 5, 12, 0.78) 100%),
+    repeating-linear-gradient(to bottom, rgba(245, 247, 255, 0.022) 0 1px, transparent 1px 3px);
+}
+
+/* Pantallas: una por estado. Transición de entrada/salida consistente. */
+.screen {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-screen);
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(1.02);
+  transition:
+    opacity var(--t-med) var(--ease-out),
+    transform var(--t-med) var(--ease-out),
+    visibility 0s linear var(--t-med);
+}
+
+.screen.is-active {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition-delay: 0s;
+}
+
+/* ---------- Botones ----------
+   ::before = borde/fondo de color (recortado), ::after = relleno interior
+   + destello. El drop-shadow del botón sigue la forma recortada. */
+.btn {
+  --btn-edge: var(--c-cyan);
+  --btn-fill: var(--c-panel-strong);
+  --btn-glow: rgba(0, 217, 255, 0.4);
+
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65em;
+  min-height: 48px;
+  padding: 0.9em 1.5em;
+  border: 0;
+  background: none;
+  color: var(--c-white);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    transform var(--t-fast) var(--ease-out),
+    filter var(--t-med) var(--ease-out);
+}
+
+.btn::before,
+.btn::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  clip-path: var(--clip-cut);
+  pointer-events: none;
+}
+
+.btn::before {
+  inset: 0;
+  background: var(--btn-edge);
+  opacity: 0.45;
+  transition: opacity var(--t-med) var(--ease-out);
+}
+
+.btn::after {
+  inset: 1.5px;
+  background:
+    linear-gradient(105deg, transparent 38%, rgba(245, 247, 255, 0.16) 50%, transparent 62%) 150% 0 / 250% 100% no-repeat,
+    var(--btn-fill);
+  transition: background-position 0.7s var(--ease-out);
+}
+
+@media (hover: hover) {
+  .btn:hover {
+    transform: translateY(-2px);
+    filter: drop-shadow(0 0 10px var(--btn-glow));
+  }
+  .btn:hover::before { opacity: 1; }
+  .btn:hover::after { background-position: -50% 0, 0 0; }
+}
+
+.btn:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 60ms;
+}
+
+.btn:focus { outline: none; }
+.btn:focus-visible::before { background: var(--c-white); opacity: 1; }
+.btn:focus-visible { filter: drop-shadow(0 0 12px var(--btn-glow)); }
+
+/* Principal: el elemento más destacado de cada pantalla. */
+.btn--primary {
+  --btn-edge: linear-gradient(100deg, var(--c-cyan) 0%, #5fa8ff 40%, var(--c-purple) 75%, var(--c-pink) 100%);
+  --btn-glow: rgba(0, 217, 255, 0.6);
+  --cut: 16px;
+  color: var(--c-ink);
+  font-size: clamp(1rem, 2.4vw, 1.2rem);
+  font-weight: 900;
+  letter-spacing: 0.24em;
+  padding: 1.05em 2.2em;
+  animation: nr-breathe 2.8s ease-in-out infinite;
+}
+
+.btn--primary::before { opacity: 1; }
+.btn--primary:focus-visible::before { background: var(--btn-edge); }
+.btn--primary:focus-visible { filter: drop-shadow(0 0 2px var(--c-white)) drop-shadow(0 0 14px var(--btn-glow)); }
+
+.btn--primary::after {
+  inset: 0;
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.6) 50%, transparent 62%) 150% 0 / 250% 100% no-repeat;
+  animation: nr-shine 4.5s var(--ease-out) 2.2s infinite;
+}
+
+.btn--primary .icon { width: 1.1em; height: 1.1em; }
+
+@media (hover: hover) {
+  .btn--primary:hover { animation: none; filter: drop-shadow(0 0 18px var(--btn-glow)); }
+  .btn--primary:hover::after { animation: none; background-position: -50% 0; }
+}
+
+/* ---------- Indicadores (chips) ---------- */
+.stat-chip {
+  --chip-c: var(--c-cyan);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 38px;
+  padding: 0.4rem 0.9rem 0.4rem 0.65rem;
+  background: var(--c-panel);
+  border: 1px solid var(--c-line);
+  border-left: 2px solid var(--chip-c);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.stat-chip .icon {
+  width: 18px;
+  height: 18px;
+  color: var(--chip-c);
+  filter: drop-shadow(0 0 5px var(--chip-c));
+}
+
+.stat-chip__label {
+  font: 700 0.6rem/1 var(--font-display);
+  letter-spacing: 0.22em;
+  color: var(--c-gray);
+}
+
+.stat-chip__value {
+  font: 700 0.95rem/1 var(--font-display);
+  letter-spacing: 0.06em;
+  color: var(--c-white);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-chip--energy { --chip-c: var(--c-green); }
+.stat-chip--best { --chip-c: var(--c-pink); }
+
+/* ---------- Toasts ---------- */
+.toast-region {
+  position: absolute;
+  left: 50%;
+  top: calc(64px + var(--safe-t));
+  z-index: var(--z-toast);
+  width: min(92vw, 460px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  --toast-c: var(--c-cyan);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 100%;
+  padding: 0.7rem 1rem;
+  background: var(--c-panel-strong);
+  border: 1px solid var(--c-line);
+  border-left: 3px solid var(--toast-c);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 22px -8px var(--toast-c);
+  font: 600 1rem/1.3 var(--font-body);
+  animation: nr-toast-in var(--t-med) var(--ease-out) both;
+}
+
+.toast.is-leaving { animation: nr-toast-out 260ms ease-in forwards; }
+.toast--pink { --toast-c: var(--c-pink); }
+.toast--green { --toast-c: var(--c-green); }
+
+.toast__tag {
+  font: 700 0.6rem/1 var(--font-display);
+  letter-spacing: 0.2em;
+  color: var(--toast-c);
+  white-space: nowrap;
+}
+
+/* ---------- Utilidades ---------- */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  border: 0;
+}
